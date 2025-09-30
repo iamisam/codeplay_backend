@@ -65,6 +65,7 @@ async function issueTokensAndLogin(req, res, user, rememberMe) {
 }
 
 const initiateSignup = async (req, res) => {
+  console.log("Initiate Signup function invoked.");
   const { leetcodeUsername, email, password } = req.body;
 
   if (!leetcodeUsername || !email || !password) {
@@ -99,7 +100,7 @@ const initiateSignup = async (req, res) => {
     });
 
     await sendVerificationEmail(newUser);
-
+    console.log("verification otp was sent to email");
     res.status(200).json({ message: "Verification OTP sent to your email." });
   } catch (error) {
     if (axios.isAxiosError(error)) {

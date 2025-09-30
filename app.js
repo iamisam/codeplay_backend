@@ -61,7 +61,10 @@ User.hasMany(ChallengeSubmission, { foreignKey: "userId" });
 ChallengeSubmission.belongsTo(User, { foreignKey: "userId" });
 
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    "https://codeplay-onud.onrender.com",
+  );
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   next();
