@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../utils/database.js";
-import User from "./user.js"; // Import the User model
+import User from "./user.js";
 
 const Friendship = sequelize.define("friendships", {
   friendshipId: {

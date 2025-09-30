@@ -11,8 +11,7 @@ const RefreshToken = sequelize.define(
       primaryKey: true,
     },
     token: {
-      // The random string
-      type: DataTypes.STRING(500), // Increased size for long random strings
+      type: DataTypes.STRING(500),
       allowNull: false,
     },
     userId: {

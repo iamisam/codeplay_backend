@@ -36,12 +36,6 @@ const sendFriendRequest = async (req, res) => {
   }
 };
 
-/**
- * GET /api/friends/requests
- * Fetches all pending friend requests for the currently logged-in user.
- * This includes both requests they have sent (outgoing) and requests
- * they have received (incoming).
- */
 const getFriendRequests = async (req, res) => {
   // req.user.userId is added by the authMiddleware
   const userId = req.user.userId;
@@ -49,11 +43,8 @@ const getFriendRequests = async (req, res) => {
     const requests = await Friendship.findAll({
       where: {
         status: "pending",
-        // Find any request where the user is either the sender or receiver
         [Op.or]: [{ requesterId: userId }, { recipientId: userId }],
       },
-      // Include the user data for both the requester and the recipient
-      // so the frontend knows who is involved in the request.
       include: [
         {
           model: User,
@@ -74,11 +65,6 @@ const getFriendRequests = async (req, res) => {
   }
 };
 
-/**
- * GET /api/friends
- * Fetches a list of all accepted friends for the currently logged-in user.
- * It sorts them by their current status (online > away > offline).
- */
 const getFriends = async (req, res) => {
   const userId = req.user.userId;
   try {
@@ -101,11 +87,7 @@ const getFriends = async (req, res) => {
       ],
     });
 
-    // The query returns the 'friendship' record. We need to extract just
-    // the other person's user data from each record.
     const friends = friendships.map((friendship) => {
-      // If the current user was the one who sent the request, the friend is the 'recipient'.
-      // Otherwise, the friend is the 'requester'.
       return friendship.requesterId === userId
         ? friendship.recipient
         : friendship.requester;
@@ -170,7 +152,6 @@ const removeFriend = async (req, res) => {
   const { friendId } = req.params;
 
   try {
-    // Find and delete the 'accepted' friendship record between the two users
     const result = await Friendship.destroy({
       where: {
         status: "accepted",

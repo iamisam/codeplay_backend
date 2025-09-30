@@ -1,4 +1,4 @@
-import { User } from "../models/user.js"; // Adjust path if needed
+import { User } from "../models/user.js";
 import { sendPasswordResetEmail } from "../utils/emailService.js";
 import { Op } from "sequelize";
 

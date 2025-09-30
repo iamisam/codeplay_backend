@@ -9,7 +9,6 @@ import User from "../models/user.js";
 
 const router = express.Router();
 
-// --- Helper to create and store a refresh token (copied for use here) ---
 async function createAndStoreRefreshToken(user, ip, deviceName) {
   const expires = new Date();
   expires.setDate(expires.getDate() + 7); // Assume 7 days on refresh
@@ -27,7 +26,6 @@ async function createAndStoreRefreshToken(user, ip, deviceName) {
   return refreshToken;
 }
 
-// --- Helper to set the cookie (copied for use here) ---
 function setTokenCookie(res, token, expires) {
   const cookieOptions = {
     httpOnly: true,
@@ -38,7 +36,6 @@ function setTokenCookie(res, token, expires) {
   res.cookie("refreshToken", token, cookieOptions);
 }
 
-// --- REFRESH TOKEN ROUTE ---
 router.post("/refresh", async (req, res) => {
   const incomingToken = req.cookies.refreshToken;
   if (!incomingToken)
@@ -62,7 +59,6 @@ router.post("/refresh", async (req, res) => {
         .json({ message: "Invalid or expired refresh token." });
     }
 
-    // Rotating Token: Create new, revoke old
     const ua = UAParser(req.headers["user-agent"]);
     const deviceName = `${ua.browser.name} on ${ua.os.name}`;
     const newRefreshToken = await createAndStoreRefreshToken(

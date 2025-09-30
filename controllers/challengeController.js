@@ -4,13 +4,11 @@ import { Op } from "sequelize";
 import axios from "axios";
 import { getProblemBySlug } from "../utils/problemStore.js"; // Import our problem store
 
-// --- NEW: Get the daily problem details ---
 const getDailyProblem = async (req, res) => {
   try {
     const dailyProblemRes = await axios.get(
       "https://leetcode-api-pied.vercel.app/daily",
     );
-    // Format the response to send only what the frontend modal needs
     const problem = {
       title: dailyProblemRes.data.question.title,
       titleSlug: dailyProblemRes.data.question.titleSlug,
@@ -22,13 +20,11 @@ const getDailyProblem = async (req, res) => {
   }
 };
 
-// --- Invite a user to a challenge ---
 const inviteUser = async (req, res) => {
   const challengerId = req.user.userId;
   const { recipientId, problemTitleSlug, problemTitle } = req.body;
 
   try {
-    // Cooldown Logic
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const recentChallenge = await Challenge.findOne({
       where: {
@@ -51,7 +47,6 @@ const inviteUser = async (req, res) => {
     let finalProblemSlug = problemTitleSlug;
     let finalProblemTitle = problemTitle;
 
-    // If no custom problem is provided, fetch the daily problem
     if (!finalProblemSlug) {
       const dailyProblemRes = await axios.get(
         "https://leetcode-api-pied.vercel.app/daily",
@@ -75,7 +70,6 @@ const inviteUser = async (req, res) => {
   }
 };
 
-// --- NEW: Search for problems for the custom challenge modal ---
 const searchProblems = async (req, res) => {
   const { query } = req.query;
   if (!query) return res.json([]);
@@ -84,7 +78,6 @@ const searchProblems = async (req, res) => {
     const response = await axios.get(
       `https://leetcode-api-pied.vercel.app/search?query=${query}`,
     );
-    // Standardize the API response structure for the frontend
     const formattedResults = response.data.map((p) => ({
       title: p.title,
       titleSlug: p.title_slug,
@@ -96,7 +89,6 @@ const searchProblems = async (req, res) => {
   }
 };
 
-// --- Get all pending challenge invitations ---
 const getInvites = async (req, res) => {
   const userId = req.user.userId;
   try {
@@ -123,7 +115,6 @@ const getInvites = async (req, res) => {
   }
 };
 
-// --- Accept a challenge invitation ---
 const acceptInvite = async (req, res) => {
   const { challengeId } = req.params;
   const userId = req.user.userId;
@@ -145,7 +136,6 @@ const acceptInvite = async (req, res) => {
   }
 };
 
-// --- Decline or cancel a challenge invitation ---
 const declineInvite = async (req, res) => {
   const { challengeId } = req.params;
   const userId = req.user.userId;
@@ -241,7 +231,6 @@ const submitSolution = async (req, res) => {
 
     const tokens = judge0Response.data.map((s) => s.token).join(",");
 
-    // Poll for batch results after a delay
     setTimeout(async () => {
       try {
         const resultsRes = await axios.get(
@@ -293,7 +282,6 @@ const submitSolution = async (req, res) => {
   }
 };
 
-// --- NEW: Get the status of an active challenge ---
 const getChallengeStatus = async (req, res) => {
   const { challengeId } = req.params;
   try {
@@ -309,17 +297,14 @@ const getChallengeStatus = async (req, res) => {
     if (!challenge)
       return res.status(404).json({ message: "Challenge not found." });
 
-    // If a winner is declared, the challenge is over
     if (challenge.status === "completed" && challenge.winner) {
       return res.json({ status: "completed", winner: challenge.winner });
     }
 
-    // If the challenge was accepted, it's active
     if (challenge.status === "active") {
       return res.json({ status: "active" });
     }
 
-    // If it's still pending after a timeout (e.g., 5 minutes), count it as a loss for the recipient
     const fiveMinutes = 5 * 60 * 1000;
     if (
       challenge.status === "pending" &&

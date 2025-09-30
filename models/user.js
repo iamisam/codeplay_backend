@@ -5,7 +5,6 @@ import sequelize from "../utils/database.js";
 const User = sequelize.define(
   "users",
   {
-    // Primary Key
     userId: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
@@ -19,13 +18,12 @@ const User = sequelize.define(
       unique: true,
     },
 
-    // Authentication Fields
     email: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
       validate: {
-        isEmail: true, // Add validation for email format
+        isEmail: true,
       },
     },
     password: {
@@ -41,7 +39,7 @@ const User = sequelize.define(
     status: {
       type: DataTypes.ENUM("online", "away", "offline"),
       allowNull: false,
-      defaultValue: "offline", // Default to offline
+      defaultValue: "offline",
     },
 
     isEmailVerified: {
@@ -61,7 +59,6 @@ const User = sequelize.define(
       allowNull: true,
     },
 
-    // LeetCode Profile Fields
     leetcodeUsername: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -97,7 +94,6 @@ const User = sequelize.define(
     },
   },
   {
-    // Add hooks to automatically hash the password
     hooks: {
       beforeCreate: async (user) => {
         if (user.password) {
@@ -106,7 +102,6 @@ const User = sequelize.define(
         }
       },
       beforeUpdate: async (user) => {
-        // Hash password on update as well, if it has been changed
         if (user.changed("password")) {
           const salt = await bcrypt.genSalt(10);
           user.password = await bcrypt.hash(user.password, salt);
@@ -116,7 +111,6 @@ const User = sequelize.define(
   },
 );
 
-// Add an instance method to compare passwords
 User.prototype.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

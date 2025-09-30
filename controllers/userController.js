@@ -1,5 +1,5 @@
 import axios from "axios";
-import { User, AcSubmission, TotalSubmission } from "../models/user.js"; // Adjust the path if needed
+import { User, AcSubmission, TotalSubmission } from "../models/user.js";
 import Friendship from "../models/friendship.js";
 import sequelize from "../utils/database.js";
 import { Op } from "sequelize";
@@ -7,7 +7,7 @@ import { Op } from "sequelize";
 const getMyProfile = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.userId, {
-      attributes: { exclude: ["password"] }, // Never send the password hash
+      attributes: { exclude: ["password"] },
       include: [
         { model: AcSubmission, as: "acSubmissions" },
         { model: TotalSubmission, as: "totalSubmissions" },
@@ -27,7 +27,6 @@ const updateMyProfile = async (req, res) => {
     const user = await User.findByPk(req.user.userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Update fields if they were provided
     if (displayName) user.displayName = displayName;
     if (
       profileVisibility &&
@@ -39,7 +38,6 @@ const updateMyProfile = async (req, res) => {
     await user.save();
     res.json({ message: "Profile updated successfully" });
   } catch (error) {
-    // Handle unique constraint error for displayName
     if (error.name === "SequelizeUniqueConstraintError") {
       return res
         .status(409)
@@ -50,7 +48,6 @@ const updateMyProfile = async (req, res) => {
   }
 };
 
-// --- Search for Users ---
 const searchUsers = async (req, res) => {
   const { query } = req.query;
   if (!query)
@@ -113,7 +110,6 @@ const getUserProfileByDisplayName = async (req, res) => {
       if (friendship) {
         friendshipStatus = {
           status: friendship.status,
-          // Note who the original requester was
           requesterId: friendship.requesterId,
         };
       }
@@ -122,7 +118,6 @@ const getUserProfileByDisplayName = async (req, res) => {
     const profileData = user.toJSON();
     profileData.friendshipStatus = friendshipStatus;
 
-    // If the profile is private, return limited data
     if (user.profileVisibility === "private") {
       if (friendshipStatus?.status !== "accepted") {
         return res.json({
@@ -135,7 +130,6 @@ const getUserProfileByDisplayName = async (req, res) => {
       }
     }
 
-    // If public, fetch the full profile with stats
     const fullProfile = await User.findByPk(user.userId, {
       attributes: { exclude: ["password", "email"] },
       include: [
@@ -153,7 +147,6 @@ const getUserProfileByDisplayName = async (req, res) => {
   }
 };
 
-// --- NEW: Update Current User's Status ---
 const updateMyStatus = async (req, res) => {
   const { status } = req.body;
   if (!status || !["online", "away"].includes(status)) {
@@ -176,13 +169,6 @@ const updateMyStatus = async (req, res) => {
   }
 };
 
-/**
- * Fetches data for a LeetCode user and updates or creates a record in the local database.
- * This includes syncing their profile and all submission stats.
- * @param {string} leetcodeUsername - The LeetCode username to sync.
- * @returns {Promise<User>} The created or updated user instance from the database.
- * @throws {Error} If the LeetCode user is not found or if there's a database error.
- */
 const updateOrCreateUserFromLeetCode = async (leetcodeUsername) => {
   let leetcodeApiData;
   try {
@@ -198,8 +184,6 @@ const updateOrCreateUserFromLeetCode = async (leetcodeUsername) => {
     throw new Error(`LeetCode user '${leetcodeUsername}' not found.`);
   }
 
-  // 2. Find an existing user or prepare to create a new one
-  // Note: We find by leetcodeUsername, not the primary key, as this is the sync point.
   const [user, created] = await User.findOrCreate({
     where: { leetcodeUsername: leetcodeApiData.username },
     defaults: {
@@ -214,7 +198,6 @@ const updateOrCreateUserFromLeetCode = async (leetcodeUsername) => {
     },
   });
 
-  // 3. If the user already existed, update their profile data
   if (!created) {
     await user.update({
       realName: leetcodeApiData.profile.realName,
@@ -227,8 +210,6 @@ const updateOrCreateUserFromLeetCode = async (leetcodeUsername) => {
     });
   }
 
-  // 4. Clear old submission stats and bulk insert the new ones
-  // Using a transaction ensures this is an all-or-nothing operation
   await sequelize.transaction(async (t) => {
     await AcSubmission.destroy({
       where: { userId: user.userId },
@@ -242,7 +223,7 @@ const updateOrCreateUserFromLeetCode = async (leetcodeUsername) => {
     const acInsertions = leetcodeApiData.submitStats.acSubmissionNum.map(
       (item) => ({
         userId: user.userId,
-        username: user.leetcodeUsername, // Use the consistent username
+        username: user.leetcodeUsername,
         difficulty: item.difficulty,
         count: item.count,
         submissions: item.submissions,
@@ -262,7 +243,6 @@ const updateOrCreateUserFromLeetCode = async (leetcodeUsername) => {
     await TotalSubmission.bulkCreate(totalInsertions, { transaction: t });
   });
 
-  // 5. Return the user instance
   return user;
 };
 
@@ -271,7 +251,6 @@ const getComparisonData = async (req, res) => {
   const { otherUserIdentifier } = req.params;
 
   try {
-    // Fetch both users' full profiles simultaneously
     const [currentUser, otherUser] = await Promise.all([
       User.findByPk(currentUserId, {
         attributes: { exclude: ["password", "email"] },

@@ -7,8 +7,6 @@ import axios from "axios";
 import { randomBytes } from "crypto";
 import UAParser from "user-agent-parser";
 
-// --- Helper Functions (moved from routes file) ---
-
 async function createAndStoreRefreshToken(user, ip, deviceName, rememberMe) {
   const expiryDays = rememberMe ? 7 : 1;
   const expires = new Date();
@@ -66,8 +64,6 @@ async function issueTokensAndLogin(req, res, user, rememberMe) {
   res.json({ accessToken });
 }
 
-// --- Controller Functions ---
-
 const initiateSignup = async (req, res) => {
   const { leetcodeUsername, email, password } = req.body;
 
@@ -90,10 +86,10 @@ const initiateSignup = async (req, res) => {
       `https://leetcode-api-pied.vercel.app/user/${leetcodeUsername}`,
     );
 
-    // Create a temporary, unverified user record to hold the OTP
+    // temporary, unverified user record to hold the OTP
     const tempUser = { email };
 
-    // Create a user record with the OTP. It's not fully "live" until verified.
+    // user record with the OTP. It's not fully "live" until verified.
     const newUser = await User.create({
       email,
       password, // Hashed by hook
@@ -124,11 +120,9 @@ const verifyOtpAndFinalize = async (req, res) => {
     return res.status(400).json({ message: "Invalid OTP." });
   }
 
-  // Finalize account
   user.verificationToken = null;
   user.isEmailVerified = true;
 
-  // Sync LeetCode data now that the user is verified
   const leetcodeData = (
     await axios.get(
       `https://leetcode-api-pied.vercel.app/user/${user.leetcodeUsername}`,
@@ -144,7 +138,6 @@ const verifyOtpAndFinalize = async (req, res) => {
   user.ranking = leetcodeData.profile.ranking;
   await user.save();
 
-  // Sync submission stats
   const acInsertions = leetcodeData.submitStats.acSubmissionNum.map((item) => ({
     userId: user.userId,
     username: user.leetcodeUsername,
@@ -157,12 +150,11 @@ const verifyOtpAndFinalize = async (req, res) => {
       ...item,
     }),
   );
-  await AcSubmission.destroy({ where: { userId: user.userId } }); // Clear any potential old stats
+  await AcSubmission.destroy({ where: { userId: user.userId } });
   await TotalSubmission.destroy({ where: { userId: user.userId } });
   await AcSubmission.bulkCreate(acInsertions);
   await TotalSubmission.bulkCreate(totalInsertions);
 
-  // Log the new user in
   await issueTokensAndLogin(req, res, user, rememberMe);
 };
 

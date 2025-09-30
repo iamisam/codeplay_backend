@@ -16,11 +16,9 @@ const authMiddleware = (req, res, next) => {
     if (!decoded) {
       return res.status(401).json({ message: "Invalid Token" });
     }
-    // Attach user payload to the request object for use in protected routes
     req.user = decoded;
-    next(); // Proceed to the next middleware or route handler
+    next();
   } catch (error) {
-    // Specifically catch the error for an expired token
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({ message: "Token expired" });
     }
