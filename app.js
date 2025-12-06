@@ -63,7 +63,7 @@ ChallengeSubmission.belongsTo(User, { foreignKey: "userId" });
 app.use((req, res, next) => {
   res.setHeader(
     "Access-Control-Allow-Origin",
-    "https://codeplay-onud.onrender.com",
+    "https://codeplay-three.vercel.app",
   );
   res.setHeader(
     "Access-Control-Allow-Methods",
